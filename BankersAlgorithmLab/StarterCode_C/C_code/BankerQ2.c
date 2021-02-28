@@ -59,8 +59,13 @@ void initBank(int *resources, int m, int n) {
 	maximum = mallocIntMatrix(n, m);
 	
 	// TODO: initialize the numberOfCustomers and numberOfResources
+	numberOfCustomers=n;
+	numberOfResources=m;
 	
 	// TODO: initialize the available vector
+	for (int i = 0; i < numberOfResources; i++){
+		available[i] = resources[i];
+	}
 
 }
 
@@ -128,7 +133,10 @@ void printState() {
  */
 void setMaximumDemand(int customerIndex, int *maximumDemand) {
 	// TODO: add customer, update maximum and need
-
+	for (int i = 0; i < numberOfResources; i++){
+		maximum[customerIndex][i] = maximumDemand[i];
+		need[customerIndex][i] = maximumDemand[i];
+	}
 }
 
 /**
@@ -145,9 +153,69 @@ int checkSafe(int customerIndex, int *request) {
 	int **tempAllocation = mallocIntMatrix(numberOfCustomers, numberOfResources);
 	
 	// TODO: copy the bank's state to the temporary memory and update it with the request.
+	for (int i = 0; i < numberOfCustomers; i++){
+		for (int j = 0; j < numberOfResources; j++){
+			if (i == customerIndex){
+				tempNeed[i][j] = need[i][j] - request[j];
+				tempAllocation[i][j] = allocation[i][j] + request[j];
+			}
+			else{
+				tempNeed[i][j] = need[i][j];
+				tempAllocation[i][j] = allocation[i][j];
+			}
+		}
+	}
 	
-	// TODO: check if the new state is safe
 
+	//create finish array and set all to false
+	int *finish = mallocIntVector(numberOfCustomers);
+	for (int i = 0; i < numberOfCustomers; i++){
+		finish[i] = 0;
+	}
+	//create work array
+	for (int j = 0; j < numberOfResources; j++){
+		work[j] = available[j] - request[j];
+	}
+
+	// TODO: check if the new state is safe
+	int safe = 1;
+	while (safe){
+		safe = 0;
+		for (int i = 0; i < numberOfCustomers; i++){
+			int numberOfSatisfied = 0;
+			if (finish[i] == 0){
+				for (int j = 0; j < numberOfResources; j++){
+					if (tempNeed[i][j] <= work[j]){
+						numberOfSatisfied++;
+					}
+					if (numberOfSatisfied == numberOfResources){
+						safe = 1;
+						// update work array
+						for (int j = 0; j < numberOfResources; j++){
+							work[j] = work[j] + tempAllocation[i][j];
+							//update finish array
+							finish[i] = 1;
+						}
+					}
+				}
+				numberOfSatisfied = 0;
+			}
+		}
+	}
+	//check finish array for safety
+	for (int i = 0; i < numberOfCustomers; i++){
+		if (finish[i] == 0){
+			freeIntVector(work);
+			freeIntVector(finish);
+			freeIntMatrix(tempNeed);
+			freeIntMatrix(tempAllocation);
+			return 0;
+		}
+	}
+	freeIntVector(work);
+	freeIntVector(finish);
+	freeIntMatrix(tempNeed);
+	freeIntMatrix(tempAllocation);
 	return 1;
 }
 
@@ -167,12 +235,32 @@ int requestResources(int customerIndex, int *request) {
 	printf("\n"); // Leave a line after each customer 
 	
 	// TODO: judge if request larger than need
+	for (int i = 0; i < numberOfResources; i++) {
+		if (request[i] > need[customerIndex][i]){
+			return 0;
+		}
+	}
 	
 	// TODO: judge if request larger than available
+	for (int i = 0; i < numberOfResources; i++){
+		if (request[i] > available[i]){
+			return 0;
+		}
+	}
+	
 	
 	// TODO: judge if the new state is safe if grants this request (for question 2)
+	if (checkSafe(customerIndex, request) != 1){
+		return 0;
+	}
 	
 	// TODO: request is granted, update state
+	for (int j = 0; j < numberOfResources; j++){
+		available[j] -= request[j];
+		allocation[customerIndex][j] += request[j];
+		need[customerIndex][j] -= request[j];
+	}
+
 	
 	return 1;
 }
@@ -186,6 +274,11 @@ void releaseResources(int customerIndex, int *release) {
 	// TODO: print the release
 	printf("Customer %d releasing\n", customerIndex);
 	// TODO: deal with release (:For simplicity, we do not judge the release request, just update directly)
+	for (int j = 0; j < numberOfResources; j++){	
+		available[j] += release[j];	
+		allocation[customerIndex][j] -= release[j];	
+		need[customerIndex][j] += release[j];	
+	}
 	
 }
 

@@ -59,8 +59,13 @@ void initBank(int *resources, int m, int n) {
 	maximum = mallocIntMatrix(n, m);
 	
 	// TODO: initialize the numberOfCustomers and numberOfResources
-	
+	numberOfCustomers= n;
+	numberOfResources=m;
+
 	// TODO: initialize the available vector
+	for(int i=0;i<numberOfResources;i++){
+		available[i]= resources[i];
+	}
 
 }
 
@@ -129,6 +134,10 @@ void printState() {
  */
 void setMaximumDemand(int customerIndex, int *maximumDemand) {
 	// TODO: add customer, update maximum and need
+	for (int i = 0; i < numberOfResources; i++){
+		maximum[customerIndex][i] = maximumDemand[i];
+		need[customerIndex][i] = maximumDemand[i];
+	}
 
 }
 
@@ -171,11 +180,21 @@ int requestResources(int customerIndex, int *request) {
 	// TODO: judge if request larger than need
 	
 	// TODO: judge if request larger than available
+	for (int j = 0; j < numberOfResources; j++){
+		if (request[j] > need[customerIndex][j] || request[j] > available[j]){
+			printf("%i's request of R%i rejected\n", customerIndex, j);
+			return 0;
+		}
+	}
 	
 	// TODO: judge if the new state is safe if grants this request (for question 2)
 	
 	// TODO: request is granted, update state
-	
+	for (int j = 0; j < numberOfResources; j++){
+		available[j] -= request[j];
+		allocation[customerIndex][j] += request[j];
+		need[customerIndex][j] -= request[j];
+	}
 	return 1;
 }
 
@@ -188,7 +207,11 @@ void releaseResources(int customerIndex, int *release) {
 	// TODO: print the release
 	printf("Customer %d releasing\n", customerIndex);
 	// TODO: deal with release (:For simplicity, we do not judge the release request, just update directly)
-	
+	for (int j = 0; j < numberOfResources; j++){
+		available[j] += release[j];
+		allocation[customerIndex][j] -= release[j];
+		need[customerIndex][j] += release[j];
+	}	
 }
 
 /**
